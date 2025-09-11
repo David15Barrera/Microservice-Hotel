@@ -6,6 +6,7 @@ import com.service.hotelService.reservation.application.ports.input.*;
 import com.service.hotelService.reservation.domain.model.ReservationDomainEntity;
 import com.service.hotelService.reservation.infrastructure.inputadapter.dto.*;
 import com.service.hotelService.reservation.infrastructure.inputadapter.mapper.ReservationMapperRest;
+import com.service.hotelService.reservation.infrastructure.outputadapter.factory.HotelWithCustomerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/reservations")
 @RequiredArgsConstructor
+
 public class ReservationControllerAdapter {
     private final CreateReservationInputPort createReservationInputPort;
     private final UpdateReservationInputPort updateReservationInputPort;
@@ -27,33 +29,36 @@ public class ReservationControllerAdapter {
     private final CheckRoomAvailabilityInputPort checkRoomAvailabilityInputPort;
     private final FindReservationsByCustomerInputPort findReservationsByCustomerInputPort;
     private final FindAllReservationsInputPort findAllReservationsInputPort;
+    private final HotelWithCustomerFactory hotelWithCustomerFactory;
+
     @PostMapping
     public ResponseEntity<ReservationResponseDto> create(@RequestBody ReservationRequestDto dto) {
         ReservationDomainEntity created = createReservationInputPort.create(ReservationMapperRest.toDomain(dto));
-        return ResponseEntity.ok(ReservationMapperRest.toResponse(created));
+        return ResponseEntity.ok(hotelWithCustomerFactory.fromDomin(created));
     }
 
-    @PutMapping({"/{id}"})
+    @PutMapping("/{id}")
     public ResponseEntity<ReservationResponseDto> update(@PathVariable UUID id, @RequestBody ReservationRequestDto dto) {
         ReservationDomainEntity updated = updateReservationInputPort.update(id, ReservationMapperRest.toDomain(dto));
-        return ResponseEntity.ok(ReservationMapperRest.toResponse(updated));
+        return ResponseEntity.ok(hotelWithCustomerFactory.fromDomin(updated));
     }
 
-    @DeleteMapping({"/{id}"})
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         deleteReservationInputPort.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping({"/{id}"})
+    @GetMapping("/{id}")
     public ResponseEntity<ReservationResponseDto> get(@PathVariable UUID id) {
-        return ResponseEntity.ok(ReservationMapperRest.toResponse(getReservationByIdInputPort.getById(id)));
+        ReservationDomainEntity found = getReservationByIdInputPort.getById(id);
+        return ResponseEntity.ok(hotelWithCustomerFactory.fromDomin(found));
     }
 
     @GetMapping("/room/{roomId}")
     public ResponseEntity<List<ReservationResponseDto>> listByRoom(@PathVariable UUID roomId) {
         List<ReservationDomainEntity> list = listReservationsByRoomInputPort.listByRoom(roomId);
-        return ResponseEntity.ok(list.stream().map(ReservationMapperRest::toResponse).toList());
+        return ResponseEntity.ok(hotelWithCustomerFactory.fromDomainList(list));
     }
 
     @GetMapping("/availability")
@@ -62,21 +67,16 @@ public class ReservationControllerAdapter {
                                                 @RequestParam LocalDate endDate) {
         return ResponseEntity.ok(checkRoomAvailabilityInputPort.isAvailable(roomId, startDate, endDate));
     }
+
     @GetMapping("/by-customer/{customerId}")
     public ResponseEntity<List<ReservationResponseDto>> getReservationsByCustomer(@PathVariable UUID customerId) {
         List<ReservationDomainEntity> reservations = findReservationsByCustomerInputPort.findByCustomerId(customerId);
-        List<ReservationResponseDto> response = reservations.stream()
-                .map(ReservationMapperRest::toResponse)
-                .toList();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(hotelWithCustomerFactory.fromDomainList(reservations));
     }
 
     @GetMapping
     public ResponseEntity<List<ReservationResponseDto>> getAllReservations() {
-        var reservations = findAllReservationsInputPort.findAll()
-                .stream()
-                .map(ReservationMapperRest::toResponse)
-                .toList();
-        return ResponseEntity.ok(reservations);
+        var reservations = findAllReservationsInputPort.findAll();
+        return ResponseEntity.ok(hotelWithCustomerFactory.fromDomainList(reservations));
     }
 }

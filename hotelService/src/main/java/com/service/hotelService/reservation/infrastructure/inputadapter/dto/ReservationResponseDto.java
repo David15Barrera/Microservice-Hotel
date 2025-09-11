@@ -1,6 +1,7 @@
 
 package com.service.hotelService.reservation.infrastructure.inputadapter.dto;
 
+import com.service.hotelService.reservation.infrastructure.outputadapter.feign.dto.CustomerResponse;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ReservationResponseDto {
+
     private UUID id;
     private UUID customerId;
     private UUID roomId;

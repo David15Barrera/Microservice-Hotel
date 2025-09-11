@@ -19,12 +19,12 @@ public class ReservationDomainEntity {
     private UUID roomId;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String state; // confirmed, cancelled, checked_in, checked_out
+    private String state;
     private BigDecimal pricePerDay;
     private BigDecimal maintenanceCostPerDay;
     private BigDecimal totalPrice;
-    private BigDecimal discountPercentage; // nullable
-    private UUID promotionId; // external microservice UUID
+    private BigDecimal discountPercentage;
+    private UUID promotionId;
 
     public void recalculateTotalPrice() {
         long days = ChronoUnit.DAYS.between(startDate, endDate);
